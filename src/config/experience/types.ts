@@ -168,6 +168,7 @@ export interface InteractionConfig {
     inertiaMultiplier: number
     minimumInertia: number
     minimumQuaternionDifference: number
+    minimumCameraGroundClearance: number
   }
   parallax: {
     maxX: number

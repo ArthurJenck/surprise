@@ -79,6 +79,10 @@ export function assertValidExperienceConfig(config: ExperienceConfig) {
   assertPositive(config.motion.opening.stageRevealDurationMs, 'motion.opening.stageRevealDurationMs')
   assertPositive(config.motion.opening.completionDelayMs, 'motion.opening.completionDelayMs')
   assertPositive(config.interaction.dragThresholdPx, 'interaction.dragThresholdPx')
+  assertNonNegative(
+    config.interaction.orbit.minimumCameraGroundClearance,
+    'interaction.orbit.minimumCameraGroundClearance'
+  )
   assertPositive(config.interaction.parallax.maxX, 'interaction.parallax.maxX')
   assertPositive(config.interaction.parallax.maxY, 'interaction.parallax.maxY')
   const audio = config.feedback.audio

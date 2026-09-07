@@ -8,6 +8,7 @@ export const interactionConfig = {
         inertiaMultiplier: 0.24,
         minimumInertia: 0.00008,
         minimumQuaternionDifference: 0.000001,
+        minimumCameraGroundClearance: 0.15,
     },
     parallax: {
         maxX: 4,

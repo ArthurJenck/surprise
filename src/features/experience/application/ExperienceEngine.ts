@@ -56,6 +56,8 @@ export class ExperienceEngine implements ExperienceController {
   private readonly parallaxQuaternion = new THREE.Quaternion()
   private readonly yawQuaternion = new THREE.Quaternion()
   private readonly pitchQuaternion = new THREE.Quaternion()
+  private readonly candidateOrbitQuaternion = new THREE.Quaternion()
+  private readonly orbitCameraPosition = new THREE.Vector3()
   private readonly pointer = new THREE.Vector2()
   private readonly raycaster = new THREE.Raycaster()
   private readonly resizeObserver: ResizeObserver
@@ -215,12 +217,10 @@ export class ExperienceEngine implements ExperienceController {
     const orbit = this.config.motion.idle.orbit
     const interaction = this.config.interaction.orbit
     if (Math.abs(this.inertiaX) > interaction.minimumInertia || Math.abs(this.inertiaY) > interaction.minimumInertia) {
-      this.yawQuaternion.setFromAxisAngle(Y_AXIS, this.inertiaX)
-      this.pitchQuaternion.setFromAxisAngle(X_AXIS, this.inertiaY)
-      this.targetOrbitQuaternion.premultiply(this.yawQuaternion).multiply(this.pitchQuaternion).normalize()
+      const appliedPitch = this.applyOrbitRotation(this.inertiaX, this.inertiaY)
       const damping = Math.pow(orbit.dampingBasePerSecond, deltaSeconds)
       this.inertiaX *= damping
-      this.inertiaY *= damping
+      this.inertiaY = appliedPitch ? this.inertiaY * damping : 0
     }
 
     this.cameraRig.quaternion.slerp(
@@ -400,11 +400,42 @@ export class ExperienceEngine implements ExperienceController {
     const sensitivity = this.coarsePointer
       ? this.config.interaction.orbit.coarsePointerSensitivity
       : this.config.interaction.orbit.finePointerSensitivity
-    this.yawQuaternion.setFromAxisAngle(Y_AXIS, -movementX * sensitivity)
-    this.pitchQuaternion.setFromAxisAngle(X_AXIS, -movementY * sensitivity)
-    this.targetOrbitQuaternion.premultiply(this.yawQuaternion).multiply(this.pitchQuaternion).normalize()
+    const appliedPitch = this.applyOrbitRotation(
+      -movementX * sensitivity,
+      -movementY * sensitivity
+    )
     this.inertiaX = -movementX * sensitivity * this.config.interaction.orbit.inertiaMultiplier
-    this.inertiaY = -movementY * sensitivity * this.config.interaction.orbit.inertiaMultiplier
+    this.inertiaY = appliedPitch
+      ? -movementY * sensitivity * this.config.interaction.orbit.inertiaMultiplier
+      : 0
+  }
+
+  private applyOrbitRotation(yaw: number, pitch: number) {
+    this.yawQuaternion.setFromAxisAngle(Y_AXIS, yaw)
+    this.pitchQuaternion.setFromAxisAngle(X_AXIS, pitch)
+    this.candidateOrbitQuaternion
+      .copy(this.targetOrbitQuaternion)
+      .premultiply(this.yawQuaternion)
+      .multiply(this.pitchQuaternion)
+      .normalize()
+
+    if (this.isOrbitCameraAboveGround(this.candidateOrbitQuaternion)) {
+      this.targetOrbitQuaternion.copy(this.candidateOrbitQuaternion)
+      return true
+    }
+
+    this.targetOrbitQuaternion.premultiply(this.yawQuaternion).normalize()
+    return false
+  }
+
+  private isOrbitCameraAboveGround(orbitQuaternion: THREE.Quaternion) {
+    const groundY =
+      this.config.scene.stage.initialY +
+      this.config.scene.gift.shadow.y * this.viewport.baseGiftScale
+    const minimumCameraY =
+      groundY + this.config.interaction.orbit.minimumCameraGroundClearance
+    this.orbitCameraPosition.copy(this.camera.position).applyQuaternion(orbitQuaternion)
+    return this.orbitCameraPosition.y >= minimumCameraY
   }
 
   private handleParallaxDrag = ({
