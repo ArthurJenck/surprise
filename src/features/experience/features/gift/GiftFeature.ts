@@ -6,7 +6,7 @@ import type {
     SceneConfig,
     ThemeConfig,
 } from '../../../../config/experience/types'
-import type { ExperienceFeature } from '../../domain/contracts'
+import type { ExperienceFeature, ModelLoadProgress } from '../../domain/contracts'
 import {
     createShakePattern,
     sampleShakePattern,
@@ -52,9 +52,10 @@ export class GiftFeature implements ExperienceFeature {
         scene: THREE.Scene,
         config: SceneConfig,
         themeConfig: ThemeConfig,
-        motionConfig: MotionConfig
+        motionConfig: MotionConfig,
+        onLoadProgress: (progress: ModelLoadProgress) => void
     ) {
-        const asset = await loadGiftAsset(config, themeConfig)
+        const asset = await loadGiftAsset(config, themeConfig, onLoadProgress)
         return new GiftFeature(asset, scene, config, themeConfig, motionConfig)
     }
 
@@ -164,10 +165,16 @@ interface GiftAsset {
 
 async function loadGiftAsset(
     config: SceneConfig,
-    themeConfig: ThemeConfig
+    themeConfig: ThemeConfig,
+    onLoadProgress: (progress: ModelLoadProgress) => void
 ): Promise<GiftAsset> {
     const loader = new GLTFLoader()
-    const gltf = await loader.loadAsync(config.gift.modelUrl)
+    const gltf = await loader.loadAsync(config.gift.modelUrl, (event) => {
+        onLoadProgress({
+            loaded: event.loaded,
+            total: event.total,
+        })
+    })
     const clip = gltf.animations[0]
 
     if (!clip) {

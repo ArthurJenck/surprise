@@ -1,11 +1,17 @@
 import type { ExperienceConfig } from '../../../config/experience'
 
-export type ExperienceState = 'idle' | 'recentering' | 'opening' | 'revealed' | 'fallback'
+export type ExperienceState = 'idle' | 'recentering' | 'opening' | 'revealed' | 'failed'
+
+export interface ModelLoadProgress {
+  loaded: number
+  total: number
+}
 
 export interface ExperienceCallbacks {
   onReady: () => void
+  onLoadProgress: (progress: ModelLoadProgress) => void
   onStateChange: (state: ExperienceState) => void
-  onFallback: () => void
+  onFailure: () => void
 }
 
 export interface ExperienceController {

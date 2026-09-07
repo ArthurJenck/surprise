@@ -99,6 +99,118 @@
                 display: none;
             }
 
+            .boot-loader {
+                display: none;
+            }
+
+            .js-enabled .static-fallback {
+                display: none;
+            }
+
+            .js-enabled .boot-loader {
+                position: fixed;
+                z-index: 30;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                color: #fff8e8;
+                text-align: center;
+                background:
+                    radial-gradient(
+                        circle at 24% 15%,
+                        rgba(221, 221, 255, 0.38),
+                        transparent 38%
+                    ),
+                    radial-gradient(
+                        circle at 78% 72%,
+                        rgba(132, 105, 207, 0.2),
+                        transparent 42%
+                    ),
+                    linear-gradient(
+                        135deg,
+                        #bab4f5 0%,
+                        #aaa8f5 42%,
+                        #8c76d8 100%
+                    );
+            }
+
+            .boot-loader__content {
+                display: grid;
+                gap: 14px;
+                justify-items: center;
+            }
+
+            .boot-loader__eyebrow {
+                margin: 0;
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+            }
+
+            .boot-loader__message {
+                margin: 0;
+                font-size: clamp(1.35rem, 6vw, 2.25rem);
+                letter-spacing: -0.05em;
+            }
+
+            .boot-loader__indicator {
+                width: min(180px, 48vw);
+                height: 4px;
+                overflow: hidden;
+                background: rgba(255, 248, 232, 0.28);
+                border-radius: 999px;
+            }
+
+            .boot-loader__indicator::before {
+                display: block;
+                width: 45%;
+                height: 100%;
+                content: '';
+                background: #fff8e8;
+                border-radius: inherit;
+                animation: boot-loader-progress 1s ease-in-out infinite
+                    alternate;
+            }
+
+            .boot-loader__failure {
+                display: none;
+                max-width: 22rem;
+                margin: 0;
+                line-height: 1.55;
+            }
+
+            .boot-loader__retry {
+                display: none;
+                padding: 11px 18px;
+                color: #36235e;
+                font-weight: 800;
+                text-decoration: none;
+                background: #fff8e8;
+                border-radius: 999px;
+            }
+
+            .app-mounted .boot-loader {
+                display: none;
+            }
+
+            .experience-bootstrap-failed .boot-loader__indicator,
+            .experience-bootstrap-failed .boot-loader__message {
+                display: none;
+            }
+
+            .experience-bootstrap-failed .boot-loader__failure,
+            .experience-bootstrap-failed .boot-loader__retry {
+                display: block;
+            }
+
+            @keyframes boot-loader-progress {
+                to {
+                    transform: translateX(120%);
+                }
+            }
+
             .static-fallback summary {
                 display: grid;
                 gap: 28px;
@@ -256,9 +368,28 @@
                 }
             }
         </style>
+        <script>
+            document.documentElement.classList.add('js-enabled')
+            window.showExperienceBootstrapError = function () {
+                document.documentElement.classList.add(
+                    'experience-bootstrap-failed'
+                )
+            }
+        </script>
     </head>
     <body>
         <div id="app"></div>
+        <section class="boot-loader" aria-live="polite" aria-busy="true">
+            <div class="boot-loader__content">
+                <h1 class="boot-loader__message">Chargement...</h1>
+                <div class="boot-loader__indicator" aria-hidden="true"></div>
+                <p class="boot-loader__failure">
+                    Échec du chargement. Vérifiez votre connexion, puis relancez
+                    la page.
+                </p>
+                <a class="boot-loader__retry" href="/">Réessayer</a>
+            </div>
+        </section>
         <details class="static-fallback">
             <summary aria-label="Voir la surprise">
                 <span class="fallback-gift" aria-hidden="true"
@@ -296,6 +427,13 @@
                 </nav>
             </section>
         </details>
-        <script type="module" src="/src/main.ts"></script>
+        <script
+            type="module"
+            src="/src/main.ts"
+            onerror="
+                window.showExperienceBootstrapError &&
+                    window.showExperienceBootstrapError()
+            "
+        ></script>
     </body>
 </html>

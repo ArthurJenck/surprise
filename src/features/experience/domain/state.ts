@@ -1,11 +1,11 @@
 import type { ExperienceState } from './contracts'
 
 const transitions: Readonly<Record<ExperienceState, readonly ExperienceState[]>> = {
-  idle: ['recentering', 'fallback'],
-  recentering: ['opening', 'fallback'],
-  opening: ['revealed', 'fallback'],
-  revealed: ['fallback'],
-  fallback: [],
+  idle: ['recentering', 'failed'],
+  recentering: ['opening', 'failed'],
+  opening: ['revealed', 'failed'],
+  revealed: ['failed'],
+  failed: [],
 }
 
 export function canTransition(

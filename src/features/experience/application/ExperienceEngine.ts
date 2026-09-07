@@ -112,7 +112,13 @@ export class ExperienceEngine implements ExperienceController {
     createSceneLights(scene, config.scene, config.theme)
 
     try {
-      const gift = await GiftFeature.create(scene, config.scene, config.theme, config.motion)
+      const gift = await GiftFeature.create(
+        scene,
+        config.scene,
+        config.theme,
+        config.motion,
+        callbacks.onLoadProgress
+      )
       const reveal = await RevealFeature.create(
         scene,
         config.content,
@@ -500,8 +506,8 @@ export class ExperienceEngine implements ExperienceController {
 
   private handleContextLost = (event: Event) => {
     event.preventDefault()
-    this.setState('fallback')
-    this.callbacks.onFallback()
+    this.setState('failed')
+    this.callbacks.onFailure()
     this.destroy()
   }
 

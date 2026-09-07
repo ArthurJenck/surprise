@@ -16,7 +16,7 @@ pnpm test
 pnpm build
 ```
 
-La page utilise Vue 3 et Three.js. Un fallback HTML natif reste accessible si JavaScript ou WebGL ne démarre pas. Vercel Web Analytics est injecté uniquement sur le build de production et doit être activé dans le dashboard Vercel après le premier déploiement.
+La page utilise Vue 3 et Three.js. Un fallback HTML natif reste accessible si JavaScript est désactivé. Les erreurs WebGL ou de chargement affichent une relance qui ne révèle pas le cadeau. Vercel Web Analytics est injecté uniquement sur le build de production et doit être activé dans le dashboard Vercel après le premier déploiement.
 
 ## Crédit du modèle 3D
 

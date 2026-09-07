@@ -51,7 +51,7 @@ export class InputController {
   }
 
   private handlePointerDown = (event: PointerEvent) => {
-    if (this.pointerId !== undefined || this.callbacks.getState() === 'fallback') {
+    if (this.pointerId !== undefined || this.callbacks.getState() === 'failed') {
       return
     }
 
