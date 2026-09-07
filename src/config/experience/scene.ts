@@ -71,11 +71,11 @@ export const sceneConfig = {
         geometry: {
             depth: 0.42,
             steps: 1,
-            curveSegments: 4,
+            curveSegments: 12,
             bevelEnabled: true,
             bevelThickness: 0.035,
             bevelSize: 0.025,
-            bevelSegments: 2,
+            bevelSegments: 3,
         },
         materials: {
             frontRoughness: 0.3,

@@ -10,7 +10,7 @@ export function createRenderer(
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: !coarsePointer,
+    antialias: true,
     powerPreference: 'high-performance',
     stencil: false,
     depth: true,

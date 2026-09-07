@@ -27,7 +27,7 @@ export const effectsConfig = {
   },
   performance: {
     finePointerMaxPixelRatio: 1.8,
-    coarsePointerMaxPixelRatio: 1.4,
+    coarsePointerMaxPixelRatio: 1.6,
     sampleDurationSeconds: 1.05,
     minimumFramesPerSecond: 45,
     pixelRatioStep: 0.3,
