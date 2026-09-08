@@ -14,6 +14,7 @@ interface InputCallbacks {
   onOrbitDrag: (movementX: number, movementY: number) => void
   onParallaxStart: () => void
   onParallaxDrag: (drag: ParallaxDrag) => void
+  onUserGesture: () => void
   onActivate: () => void
   requestFrame: () => void
 }
@@ -61,6 +62,10 @@ export class InputController {
     this.pointerStartY = event.clientY
     this.pointerPreviousX = event.clientX
     this.pointerPreviousY = event.clientY
+
+    if (this.callbacks.getState() === 'idle') {
+      this.callbacks.onUserGesture()
+    }
 
     if (this.callbacks.getState() !== 'idle') {
       this.callbacks.onParallaxStart()

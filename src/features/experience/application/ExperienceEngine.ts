@@ -21,6 +21,7 @@ import { ConfettiFeature } from '../features/confetti/ConfettiFeature'
 import { playOpeningFeedback } from '../features/feedback/openingFeedback'
 import { GiftFeature } from '../features/gift/GiftFeature'
 import { RevealFeature } from '../features/reveal/RevealFeature'
+import { DeviceShakeController } from '../input/DeviceShakeController'
 import { InputController } from '../input/InputController'
 
 const FRONT_QUATERNION = new THREE.Quaternion()
@@ -58,10 +59,13 @@ export class ExperienceEngine implements ExperienceController {
   private readonly pitchQuaternion = new THREE.Quaternion()
   private readonly candidateOrbitQuaternion = new THREE.Quaternion()
   private readonly orbitCameraPosition = new THREE.Vector3()
+  private readonly openingCameraPosition = new THREE.Vector3()
+  private readonly frontCameraPosition = new THREE.Vector3()
   private readonly pointer = new THREE.Vector2()
   private readonly raycaster = new THREE.Raycaster()
   private readonly resizeObserver: ResizeObserver
   private readonly input: InputController
+  private readonly shakeToOpen: DeviceShakeController
 
   private constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -81,12 +85,19 @@ export class ExperienceEngine implements ExperienceController {
     this.currentPixelRatio = renderer.getPixelRatio()
     this.viewport = resolveViewport(canvas.clientWidth, canvas.clientHeight, config.responsive)
     this.resizeObserver = new ResizeObserver(this.handleResize)
+    this.shakeToOpen = new DeviceShakeController({
+      config: config.interaction.shakeToOpen,
+      enabled: coarsePointer && !reducedMotion,
+      getState: () => this.state,
+      onShake: this.beginOpening,
+    })
     this.input = new InputController(canvas, config.interaction, {
       getState: () => this.state,
       isGiftHit: this.isGiftHit,
       onOrbitDrag: this.handleOrbitDrag,
       onParallaxStart: this.captureParallaxStart,
       onParallaxDrag: this.handleParallaxDrag,
+      onUserGesture: this.armShakeToOpen,
       onActivate: this.beginOpening,
       requestFrame: this.requestFrame,
     })
@@ -158,6 +169,7 @@ export class ExperienceEngine implements ExperienceController {
     window.clearTimeout(this.shakeTimer)
     this.resizeObserver.disconnect()
     this.input.dispose()
+    this.shakeToOpen.dispose()
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost)
     document.removeEventListener('visibilitychange', this.handleVisibilityChange)
     this.gift.dispose()
@@ -264,6 +276,12 @@ export class ExperienceEngine implements ExperienceController {
       recenterProgress
     )
     this.cameraRig.quaternion.copy(this.baseQuaternion).multiply(this.parallaxQuaternion)
+    this.camera.position.lerpVectors(
+      this.openingCameraPosition,
+      this.frontCameraPosition,
+      recenterProgress
+    )
+    this.camera.lookAt(...this.config.scene.camera.initialLookAt)
 
     if (!this.openingStateSent && elapsedMs >= this.recenterDurationMs) {
       this.openingStateSent = true
@@ -383,10 +401,16 @@ export class ExperienceEngine implements ExperienceController {
     }
 
     window.clearTimeout(this.shakeTimer)
+    this.shakeToOpen.dispose()
     this.openingQuaternion.copy(this.cameraRig.quaternion)
+    this.openingCameraPosition.copy(this.camera.position)
+    this.frontCameraPosition.set(0, this.viewport.cameraY, this.viewport.cameraZ)
     this.openingStartedAtMs = performance.now()
     this.recenterDurationMs = recenterDurationForAngle(
-      this.openingQuaternion.angleTo(FRONT_QUATERNION),
+      this.orbitCameraPosition
+        .copy(this.camera.position)
+        .applyQuaternion(this.cameraRig.quaternion)
+        .angleTo(this.frontCameraPosition),
       this.config.motion.opening.recenterMinDurationMs,
       this.config.motion.opening.recenterMaxDurationMs
     )
@@ -414,6 +438,10 @@ export class ExperienceEngine implements ExperienceController {
     this.inertiaY = appliedPitch
       ? -movementY * sensitivity * this.config.interaction.orbit.inertiaMultiplier
       : 0
+  }
+
+  private armShakeToOpen = () => {
+    this.shakeToOpen.arm()
   }
 
   private applyOrbitRotation(yaw: number, pitch: number) {
@@ -489,8 +517,13 @@ export class ExperienceEngine implements ExperienceController {
     )
     this.camera.aspect = this.viewport.aspectRatio
     this.camera.fov = this.viewport.cameraFov
-    this.camera.position.z = this.viewport.cameraZ
-    this.camera.position.y = this.viewport.cameraY
+    this.frontCameraPosition.set(0, this.viewport.cameraY, this.viewport.cameraZ)
+    if (this.state === 'idle') {
+      this.camera.position.fromArray(this.config.scene.camera.initialPosition)
+    } else if (this.state === 'revealed') {
+      this.camera.position.copy(this.frontCameraPosition)
+    }
+    this.camera.lookAt(...this.config.scene.camera.initialLookAt)
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(this.viewport.width, this.viewport.height, false)
 

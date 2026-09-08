@@ -82,6 +82,17 @@ export function assertValidExperienceConfig(config: ExperienceConfig) {
   assertPositive(config.motion.opening.stageRevealDurationMs, 'motion.opening.stageRevealDurationMs')
   assertPositive(config.motion.opening.completionDelayMs, 'motion.opening.completionDelayMs')
   assertPositive(config.interaction.dragThresholdPx, 'interaction.dragThresholdPx')
+  const shakeToOpen = config.interaction.shakeToOpen
+  assertPositive(
+    shakeToOpen.minimumAccelerationMagnitudeMetersPerSecondSquared,
+    'interaction.shakeToOpen.minimumAccelerationMagnitudeMetersPerSecondSquared'
+  )
+  assertPositiveInteger(shakeToOpen.requiredPeakCount, 'interaction.shakeToOpen.requiredPeakCount')
+  if (shakeToOpen.requiredPeakCount < 2) {
+    throw new ExperienceConfigError('interaction.shakeToOpen.requiredPeakCount must be at least 2.')
+  }
+  assertPositive(shakeToOpen.peakWindowMs, 'interaction.shakeToOpen.peakWindowMs')
+  assertPositive(shakeToOpen.cooldownMs, 'interaction.shakeToOpen.cooldownMs')
   assertNonNegative(
     config.interaction.orbit.minimumCameraGroundClearance,
     'interaction.orbit.minimumCameraGroundClearance'

@@ -2,6 +2,12 @@ import type { InteractionConfig } from './types'
 
 export const interactionConfig = {
     dragThresholdPx: 7,
+    shakeToOpen: {
+        minimumAccelerationMagnitudeMetersPerSecondSquared: 14,
+        requiredPeakCount: 2,
+        peakWindowMs: 650,
+        cooldownMs: 1000,
+    },
     orbit: {
         finePointerSensitivity: 0.007,
         coarsePointerSensitivity: 0.009,

@@ -167,6 +167,12 @@ export interface MotionConfig {
 
 export interface InteractionConfig {
   dragThresholdPx: number
+  shakeToOpen: {
+    minimumAccelerationMagnitudeMetersPerSecondSquared: number
+    requiredPeakCount: number
+    peakWindowMs: number
+    cooldownMs: number
+  }
   orbit: {
     finePointerSensitivity: number
     coarsePointerSensitivity: number

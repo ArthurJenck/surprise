@@ -10,7 +10,7 @@ export const sceneConfig = {
     camera: {
         near: 0.1,
         far: 50,
-        initialPosition: [0, 0.35, 8.5],
+        initialPosition: [3.5, 2.5, 7],
         initialLookAt: [0, 0, 0],
     },
     stage: {

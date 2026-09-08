@@ -115,4 +115,21 @@ describe('experience configuration validation', () => {
       'motion.idle.shake.delayRangeMs[1] must be at least motion.idle.shake.delayRangeMs[0].'
     )
   })
+
+  it('requires two peaks to open the gift by shaking', () => {
+    const invalidConfig: ExperienceConfig = {
+      ...experienceConfig,
+      interaction: {
+        ...experienceConfig.interaction,
+        shakeToOpen: {
+          ...experienceConfig.interaction.shakeToOpen,
+          requiredPeakCount: 1,
+        },
+      },
+    }
+
+    expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
+      'interaction.shakeToOpen.requiredPeakCount must be at least 2.'
+    )
+  })
 })
