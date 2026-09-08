@@ -53,19 +53,18 @@ export class ExperienceEngine implements ExperienceController {
   private parallaxCurrentY = 0
   private readonly targetOrbitQuaternion = new THREE.Quaternion()
   private readonly openingQuaternion = new THREE.Quaternion()
-  private readonly baseQuaternion = new THREE.Quaternion()
   private readonly parallaxQuaternion = new THREE.Quaternion()
   private readonly yawQuaternion = new THREE.Quaternion()
   private readonly pitchQuaternion = new THREE.Quaternion()
   private readonly candidateOrbitQuaternion = new THREE.Quaternion()
   private readonly orbitCameraPosition = new THREE.Vector3()
-  private readonly openingCameraPosition = new THREE.Vector3()
-  private readonly frontCameraPosition = new THREE.Vector3()
   private readonly pointer = new THREE.Vector2()
   private readonly raycaster = new THREE.Raycaster()
   private readonly resizeObserver: ResizeObserver
   private readonly input: InputController
   private readonly shakeToOpen: DeviceShakeController
+  private openingOrbitYaw = 0
+  private openingOrbitPitch = 0
 
   private constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -84,6 +83,20 @@ export class ExperienceEngine implements ExperienceController {
     this.recenterDurationMs = config.motion.opening.recenterMinDurationMs
     this.currentPixelRatio = renderer.getPixelRatio()
     this.viewport = resolveViewport(canvas.clientWidth, canvas.clientHeight, config.responsive)
+    const frontCameraPosition = new THREE.Vector3(0, this.viewport.cameraY, this.viewport.cameraZ)
+    const initialPosition = new THREE.Vector3().fromArray(config.scene.camera.initialPosition)
+    this.camera.position.copy(frontCameraPosition)
+    this.camera.lookAt(...config.scene.camera.initialLookAt)
+    this.cameraRig.quaternion.setFromEuler(
+      new THREE.Euler(
+        Math.atan2(frontCameraPosition.y, frontCameraPosition.z) -
+          Math.atan2(initialPosition.y, Math.hypot(initialPosition.x, initialPosition.z)),
+        Math.atan2(initialPosition.x, initialPosition.z),
+        0,
+        'YXZ'
+      )
+    )
+    this.targetOrbitQuaternion.copy(this.cameraRig.quaternion)
     this.resizeObserver = new ResizeObserver(this.handleResize)
     this.shakeToOpen = new DeviceShakeController({
       config: config.interaction.shakeToOpen,
@@ -270,18 +283,16 @@ export class ExperienceEngine implements ExperienceController {
     const timeScale = this.reducedMotion ? this.config.motion.opening.reducedMotionTimeScale : 1
     const elapsedMs = (nowMs - this.openingStartedAtMs) / timeScale
     const recenterProgress = easeInOutCubic(phase(elapsedMs, 0, this.recenterDurationMs))
-    this.baseQuaternion.slerpQuaternions(
-      this.openingQuaternion,
-      FRONT_QUATERNION,
-      recenterProgress
-    )
-    this.cameraRig.quaternion.copy(this.baseQuaternion).multiply(this.parallaxQuaternion)
-    this.camera.position.lerpVectors(
-      this.openingCameraPosition,
-      this.frontCameraPosition,
-      recenterProgress
-    )
-    this.camera.lookAt(...this.config.scene.camera.initialLookAt)
+    this.cameraRig.quaternion
+      .setFromEuler(
+        new THREE.Euler(
+          THREE.MathUtils.lerp(this.openingOrbitPitch, 0, recenterProgress),
+          THREE.MathUtils.lerp(this.openingOrbitYaw, 0, recenterProgress),
+          0,
+          'YXZ'
+        )
+      )
+      .multiply(this.parallaxQuaternion)
 
     if (!this.openingStateSent && elapsedMs >= this.recenterDurationMs) {
       this.openingStateSent = true
@@ -403,14 +414,17 @@ export class ExperienceEngine implements ExperienceController {
     window.clearTimeout(this.shakeTimer)
     this.shakeToOpen.dispose()
     this.openingQuaternion.copy(this.cameraRig.quaternion)
-    this.openingCameraPosition.copy(this.camera.position)
-    this.frontCameraPosition.set(0, this.viewport.cameraY, this.viewport.cameraZ)
+    this.orbitCameraPosition.copy(this.camera.position).applyQuaternion(this.cameraRig.quaternion)
+    this.openingOrbitYaw = Math.atan2(this.orbitCameraPosition.x, this.orbitCameraPosition.z)
+    this.openingOrbitPitch =
+      Math.atan2(this.camera.position.y, this.camera.position.z) -
+      Math.atan2(
+        this.orbitCameraPosition.y,
+        Math.hypot(this.orbitCameraPosition.x, this.orbitCameraPosition.z)
+      )
     this.openingStartedAtMs = performance.now()
     this.recenterDurationMs = recenterDurationForAngle(
-      this.orbitCameraPosition
-        .copy(this.camera.position)
-        .applyQuaternion(this.cameraRig.quaternion)
-        .angleTo(this.frontCameraPosition),
+      this.openingQuaternion.angleTo(FRONT_QUATERNION),
       this.config.motion.opening.recenterMinDurationMs,
       this.config.motion.opening.recenterMaxDurationMs
     )
@@ -517,12 +531,7 @@ export class ExperienceEngine implements ExperienceController {
     )
     this.camera.aspect = this.viewport.aspectRatio
     this.camera.fov = this.viewport.cameraFov
-    this.frontCameraPosition.set(0, this.viewport.cameraY, this.viewport.cameraZ)
-    if (this.state === 'idle') {
-      this.camera.position.fromArray(this.config.scene.camera.initialPosition)
-    } else if (this.state === 'revealed') {
-      this.camera.position.copy(this.frontCameraPosition)
-    }
+    this.camera.position.set(0, this.viewport.cameraY, this.viewport.cameraZ)
     this.camera.lookAt(...this.config.scene.camera.initialLookAt)
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(this.viewport.width, this.viewport.height, false)
