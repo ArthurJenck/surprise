@@ -174,6 +174,29 @@
     pointer-events: none;
 }
 
+.reveal-overlay::before {
+    position: absolute;
+    z-index: 0;
+    top: -52px;
+    right: -22px;
+    bottom: -100px;
+    left: -22px;
+    content: '';
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0) 100%
+    );
+    opacity: 0;
+    animation: overlay-backdrop-entry 360ms ease-out both;
+    pointer-events: none;
+}
+
+.reveal-overlay > * {
+    position: relative;
+    z-index: 1;
+}
+
 .reveal-signature {
     margin: 0;
     font-size: clamp(0.76rem, 2.8vw, 0.96rem);
@@ -181,6 +204,28 @@
     letter-spacing: -0.02em;
     opacity: 0;
     transform: translateY(10px);
+}
+
+.reveal-availability,
+.reveal-contact {
+    max-width: min(42rem, 100%);
+    margin: 0;
+    font-size: clamp(0.72rem, 2.6vw, 0.9rem);
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.reveal-contact-link {
+    display: inline-block;
+    color: inherit;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 4px;
+    transition: transform 150ms ease-out;
+    will-change: transform;
+    pointer-events: auto;
 }
 
 .reveal-links {
@@ -208,11 +253,14 @@
 }
 
 .reveal-link:hover,
-.reveal-link:focus-visible {
-    transform: scale(1.06);
+.reveal-link:focus-visible,
+.reveal-contact-link:hover,
+.reveal-contact-link:focus-visible {
+    transform: scale(1.04);
 }
 
-.reveal-link:active {
+.reveal-link:active,
+.reveal-contact-link:active {
     transform: scale(0.94);
 }
 
@@ -220,15 +268,29 @@
     animation: overlay-entry 240ms ease-out both;
 }
 
+.reveal-overlay--visible .reveal-availability {
+    animation: overlay-entry 260ms ease-out 80ms both;
+}
+
+.reveal-overlay--visible .reveal-contact {
+    animation: overlay-entry 260ms ease-out 160ms both;
+}
+
 .reveal-overlay--visible .reveal-link-item {
     animation: overlay-entry 280ms ease-out
-        calc(var(--link-index) * 120ms + 80ms) both;
+        calc(var(--link-index) * 120ms + 240ms) both;
 }
 
 @keyframes overlay-entry {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes overlay-backdrop-entry {
+    to {
+        opacity: 1;
     }
 }
 
@@ -249,7 +311,10 @@
 
 @media (prefers-reduced-motion: reduce) {
     .reveal-signature,
+    .reveal-availability,
+    .reveal-contact,
     .reveal-link-item,
+    .reveal-overlay::before,
     .loading-overlay,
     .loading-overlay__meter-fill {
         transition-duration: 1ms;

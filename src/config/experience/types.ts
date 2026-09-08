@@ -10,6 +10,11 @@ export interface ProfessionalLink {
 export interface ContentConfig {
   overlay: {
     signature: string
+    availability: string
+    contact: {
+      label: string
+      email: string
+    }
     links: readonly ProfessionalLink[]
   }
   revealText: {

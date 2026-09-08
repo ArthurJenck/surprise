@@ -71,6 +71,8 @@ onBeforeUnmount(() => {
         />
         <RevealOverlay
             :signature="experienceConfig.content.overlay.signature"
+            :availability="experienceConfig.content.overlay.availability"
+            :contact="experienceConfig.content.overlay.contact"
             :links="experienceConfig.content.overlay.links"
             :visible="state === 'revealed'"
         />

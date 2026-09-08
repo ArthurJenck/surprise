@@ -3,6 +3,12 @@ import type { ContentConfig } from './types'
 export const contentConfig = {
     overlay: {
         signature: 'Arthur Jenck - Développeur créatif',
+        availability:
+            'En recherche d’une alternance pour mon mastère Expert en Création Numérique Interactive à Gobelins - rythme 2 semaines / 2 semaines.',
+        contact: {
+            label: 'Restons en contact',
+            email: 'contact@arthurjenck.com',
+        },
         links: [
             { label: 'arthurjenck.com', href: 'https://arthurjenck.com' },
             { label: 'GitHub', href: 'https://github.com/ArthurJenck' },

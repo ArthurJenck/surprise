@@ -23,6 +23,63 @@ describe('experience configuration validation', () => {
     expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(ExperienceConfigError)
   })
 
+  it('rejects an empty availability message', () => {
+    const invalidConfig: ExperienceConfig = {
+      ...experienceConfig,
+      content: {
+        ...experienceConfig.content,
+        overlay: {
+          ...experienceConfig.content.overlay,
+          availability: '',
+        },
+      },
+    }
+
+    expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
+      'content.overlay.availability must not be empty.'
+    )
+  })
+
+  it('rejects an empty contact label', () => {
+    const invalidConfig: ExperienceConfig = {
+      ...experienceConfig,
+      content: {
+        ...experienceConfig.content,
+        overlay: {
+          ...experienceConfig.content.overlay,
+          contact: {
+            ...experienceConfig.content.overlay.contact,
+            label: '',
+          },
+        },
+      },
+    }
+
+    expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
+      'content.overlay.contact.label must not be empty.'
+    )
+  })
+
+  it('rejects an empty contact email', () => {
+    const invalidConfig: ExperienceConfig = {
+      ...experienceConfig,
+      content: {
+        ...experienceConfig.content,
+        overlay: {
+          ...experienceConfig.content.overlay,
+          contact: {
+            ...experienceConfig.content.overlay.contact,
+            email: '',
+          },
+        },
+      },
+    }
+
+    expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
+      'content.overlay.contact.email must not be empty.'
+    )
+  })
+
   it('rejects mismatched reveal text positions', () => {
     const invalidConfig: ExperienceConfig = {
       ...experienceConfig,

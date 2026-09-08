@@ -11,6 +11,9 @@ export function assertValidExperienceConfig(config: ExperienceConfig) {
   assertNonEmpty(config.scene.gift.modelUrl, 'scene.gift.modelUrl')
   assertNonEmpty(config.scene.reveal.fontUrl, 'scene.reveal.fontUrl')
   assertNonEmpty(config.content.overlay.signature, 'content.overlay.signature')
+  assertNonEmpty(config.content.overlay.availability, 'content.overlay.availability')
+  assertNonEmpty(config.content.overlay.contact.label, 'content.overlay.contact.label')
+  assertNonEmpty(config.content.overlay.contact.email, 'content.overlay.contact.email')
   config.content.overlay.links.forEach((link, index) => {
     assertNonEmpty(link.label, `content.overlay.links[${index}].label`)
     assertNonEmpty(link.href, `content.overlay.links[${index}].href`)
