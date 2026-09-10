@@ -1,5 +1,5 @@
 import { experienceConfig } from '../config/experience'
-import type { ExperienceConfig } from '../config/experience'
+import type { ExperienceConfig, Locale } from '../config/experience'
 import { ExperienceEngine } from '../features/experience/application/ExperienceEngine'
 import type {
   ExperienceCallbacks,
@@ -11,7 +11,8 @@ export type { ExperienceCallbacks, ExperienceController }
 export function createExperience(
   canvas: HTMLCanvasElement,
   callbacks: ExperienceCallbacks,
-  config: ExperienceConfig = experienceConfig
+  config: ExperienceConfig = experienceConfig,
+  locale: Locale = 'fr'
 ): Promise<ExperienceController> {
-  return ExperienceEngine.create(canvas, config, callbacks)
+  return ExperienceEngine.create(canvas, config, callbacks, locale)
 }

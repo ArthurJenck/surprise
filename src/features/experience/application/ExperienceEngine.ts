@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { ExperienceConfig } from '../../../config/experience'
+import type { ExperienceConfig, Locale } from '../../../config/experience'
 import { assertValidExperienceConfig } from '../../../config/experience/validation'
 import { disposeSceneResources } from '../core/dispose'
 import { createSceneLights } from '../core/lighting'
@@ -78,7 +78,8 @@ export class ExperienceEngine implements ExperienceController {
     private readonly reveal: RevealFeature,
     private readonly confetti: ConfettiFeature,
     private readonly reducedMotion: boolean,
-    private readonly coarsePointer: boolean
+    private readonly coarsePointer: boolean,
+    private locale: Locale
   ) {
     this.recenterDurationMs = config.motion.opening.recenterMinDurationMs
     this.currentPixelRatio = renderer.getPixelRatio()
@@ -119,7 +120,8 @@ export class ExperienceEngine implements ExperienceController {
   static async create(
     canvas: HTMLCanvasElement,
     config: ExperienceConfig,
-    callbacks: ExperienceCallbacks
+    callbacks: ExperienceCallbacks,
+    locale: Locale
   ): Promise<ExperienceEngine> {
     assertValidExperienceConfig(config)
 
@@ -145,10 +147,11 @@ export class ExperienceEngine implements ExperienceController {
       )
       const reveal = await RevealFeature.create(
         scene,
-        config.content,
+        config.content.locales,
         config.scene,
         config.theme,
-        config.motion
+        config.motion,
+        locale
       )
       const confetti = new ConfettiFeature(scene, config.effects, config.theme, coarsePointer)
       return new ExperienceEngine(
@@ -163,7 +166,8 @@ export class ExperienceEngine implements ExperienceController {
         reveal,
         confetti,
         reducedMotion,
-        coarsePointer
+        coarsePointer,
+        locale
       ).initialize()
     } catch (error) {
       disposeSceneResources(scene)
@@ -190,6 +194,27 @@ export class ExperienceEngine implements ExperienceController {
     this.confetti.dispose()
     disposeSceneResources(this.scene)
     this.renderer.dispose()
+  }
+
+  setLocale = (locale: Locale) => {
+    if (this.destroyed || this.locale === locale) {
+      return
+    }
+
+    this.locale = locale
+    this.reveal.setLocale(
+      locale,
+      this.state === 'revealed' ? this.viewport.textScale : undefined
+    )
+
+    if (this.state === 'revealed') {
+      this.canvas.setAttribute(
+        'aria-label',
+        this.config.content.locales[locale].accessibility.openedCanvasLabel
+      )
+    }
+
+    this.requestFrame()
   }
 
   private initialize() {
@@ -570,7 +595,7 @@ export class ExperienceEngine implements ExperienceController {
     if (nextState === 'revealed') {
       this.canvas.setAttribute(
         'aria-label',
-        'Cadeau ouvert. Les liens professionnels sont affichés sous la scène.'
+        this.config.content.locales[this.locale].accessibility.openedCanvasLabel
       )
       this.canvas.setAttribute('role', 'img')
       this.canvas.tabIndex = -1

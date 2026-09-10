@@ -2,12 +2,16 @@ export type ColorValue = string | number
 
 export type Vector3 = readonly [number, number, number]
 
+export const LOCALES = ['fr', 'en'] as const
+
+export type Locale = (typeof LOCALES)[number]
+
 export interface ProfessionalLink {
   label: string
   href: string
 }
 
-export interface ContentConfig {
+export interface LocalizedContent {
   overlay: {
     signature: string
     availability: string
@@ -16,9 +20,41 @@ export interface ContentConfig {
       email: string
     }
     links: readonly ProfessionalLink[]
+    professionalLinksLabel: string
   }
   revealText: {
     lines: readonly string[]
+    maximumWidth?: number
+  }
+  loading: {
+    message: string
+    failureMessage: string
+    failureDetail: string
+    retryLabel: string
+    reloadLabel: string
+  }
+  accessibility: {
+    closedCanvasLabel: string
+    openedCanvasLabel: string
+    languageSwitcherLabel: string
+  }
+  document: {
+    title: string
+    description: string
+  }
+}
+
+export interface LanguageOption {
+  locale: Locale
+  label: string
+  compactLabel: string
+}
+
+export interface ContentConfig {
+  locales: Readonly<Record<Locale, LocalizedContent>>
+  languageSelection: {
+    ariaLabel: string
+    options: readonly LanguageOption[]
   }
 }
 

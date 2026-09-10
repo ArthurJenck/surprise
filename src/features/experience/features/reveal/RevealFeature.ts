@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import * as opentype from 'opentype.js'
 import type {
-  ContentConfig,
+  Locale,
+  LocalizedContent,
   MotionConfig,
   SceneConfig,
   ThemeConfig,
@@ -12,33 +13,77 @@ import type { ExperienceFeature } from '../../domain/contracts'
 export class RevealFeature implements ExperienceFeature {
   readonly root = new THREE.Group()
 
-  private readonly content = new THREE.Group()
+  private activeContent: THREE.Group
   private readonly config: SceneConfig
   private readonly motionConfig: MotionConfig
+  private readonly contentByLocale: ReadonlyMap<Locale, THREE.Group>
+  private readonly materials: RevealMaterials
 
   private constructor(
     scene: THREE.Scene,
     config: SceneConfig,
     motionConfig: MotionConfig,
-    content: THREE.Group
+    contentByLocale: ReadonlyMap<Locale, THREE.Group>,
+    materials: RevealMaterials,
+    locale: Locale
   ) {
     this.config = config
     this.motionConfig = motionConfig
-    this.content = content
-    this.root.add(content)
+    this.contentByLocale = contentByLocale
+    this.materials = materials
+    this.activeContent = getContent(contentByLocale, locale)
+    contentByLocale.forEach((content, contentLocale) => {
+      content.visible = contentLocale === locale
+      this.root.add(content)
+    })
     this.root.visible = false
     scene.add(this.root)
   }
 
   static async create(
     scene: THREE.Scene,
-    contentConfig: ContentConfig,
+    localizedContent: Readonly<Record<Locale, LocalizedContent>>,
     sceneConfig: SceneConfig,
     themeConfig: ThemeConfig,
-    motionConfig: MotionConfig
+    motionConfig: MotionConfig,
+    locale: Locale
   ) {
-    const content = await createTextContent(contentConfig, sceneConfig, themeConfig)
-    return new RevealFeature(scene, sceneConfig, motionConfig, content)
+    const font = await loadFont(sceneConfig.reveal.fontUrl)
+    const materials = createMaterials(sceneConfig, themeConfig)
+    const contentByLocale = new Map<Locale, THREE.Group>()
+
+    for (const contentLocale of ['fr', 'en'] as const) {
+      contentByLocale.set(
+        contentLocale,
+        createTextContent(localizedContent[contentLocale], sceneConfig, materials, font)
+      )
+    }
+
+    return new RevealFeature(
+      scene,
+      sceneConfig,
+      motionConfig,
+      contentByLocale,
+      materials,
+      locale
+    )
+  }
+
+  setLocale(locale: Locale, responsiveScale?: number) {
+    const nextContent = getContent(this.contentByLocale, locale)
+
+    if (nextContent === this.activeContent) {
+      return
+    }
+
+    this.activeContent.visible = false
+    this.activeContent = nextContent
+    this.activeContent.visible = true
+
+    if (responsiveScale !== undefined) {
+      this.activeContent.rotation.set(0, 0, 0)
+      this.activeContent.scale.setScalar(responsiveScale)
+    }
   }
 
   applyOpeningProgress(progress: number, responsiveScale: number) {
@@ -53,15 +98,15 @@ export class RevealFeature implements ExperienceFeature {
       THREE.MathUtils.lerp(parallax.textStartY, parallax.textFinalY, progress),
       THREE.MathUtils.lerp(parallax.textStartZ, parallax.textFinalZ, progress)
     )
-    this.content.scale.setScalar(
+    this.activeContent.scale.setScalar(
       responsiveScale * Math.max(this.config.reveal.minimumVisibleScale, progress)
     )
-    this.content.rotation.x = THREE.MathUtils.lerp(
+    this.activeContent.rotation.x = THREE.MathUtils.lerp(
       parallax.textStartRotationX,
       0,
       easeOutCubic(progress)
     )
-    this.content.rotation.y = THREE.MathUtils.lerp(
+    this.activeContent.rotation.y = THREE.MathUtils.lerp(
       parallax.textStartRotationY,
       0,
       easeOutCubic(progress)
@@ -74,45 +119,66 @@ export class RevealFeature implements ExperienceFeature {
 
   finalize(responsiveScale: number) {
     this.root.visible = true
-    this.content.rotation.set(0, 0, 0)
-    this.content.scale.setScalar(responsiveScale)
+    this.activeContent.rotation.set(0, 0, 0)
+    this.activeContent.scale.setScalar(responsiveScale)
   }
 
   setResponsiveScale(responsiveScale: number) {
-    this.content.scale.setScalar(responsiveScale)
+    this.activeContent.scale.setScalar(responsiveScale)
   }
 
   dispose() {
+    this.root.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose()
+      }
+    })
+    this.materials.front.dispose()
+    this.materials.side.dispose()
     this.root.removeFromParent()
   }
 }
 
-async function createTextContent(
-  contentConfig: ContentConfig,
-  sceneConfig: SceneConfig,
-  themeConfig: ThemeConfig
-) {
-  const response = await fetch(sceneConfig.reveal.fontUrl)
+interface RevealMaterials {
+  front: THREE.MeshPhysicalMaterial
+  side: THREE.MeshStandardMaterial
+}
+
+async function loadFont(fontUrl: string) {
+  const response = await fetch(fontUrl)
 
   if (!response.ok) {
-    throw new Error('Impossible de charger la police 3D locale.')
+    throw new Error('Unable to load the local 3D font.')
   }
 
-  const font = opentype.parse(await response.arrayBuffer())
+  return opentype.parse(await response.arrayBuffer())
+}
+
+function createMaterials(sceneConfig: SceneConfig, themeConfig: ThemeConfig): RevealMaterials {
+  return {
+    front: new THREE.MeshPhysicalMaterial({
+      color: themeConfig.scene.revealFront,
+      roughness: sceneConfig.reveal.materials.frontRoughness,
+      metalness: sceneConfig.reveal.materials.frontMetalness,
+      clearcoat: sceneConfig.reveal.materials.frontClearcoat,
+      clearcoatRoughness: sceneConfig.reveal.materials.frontClearcoatRoughness,
+    }),
+    side: new THREE.MeshStandardMaterial({
+      color: themeConfig.scene.revealSide,
+      roughness: sceneConfig.reveal.materials.sideRoughness,
+      metalness: sceneConfig.reveal.materials.sideMetalness,
+    }),
+  }
+}
+
+function createTextContent(
+  contentConfig: LocalizedContent,
+  sceneConfig: SceneConfig,
+  materials: RevealMaterials,
+  font: opentype.Font
+) {
   const content = new THREE.Group()
   const textLines = new THREE.Group()
-  const frontMaterial = new THREE.MeshPhysicalMaterial({
-    color: themeConfig.scene.revealFront,
-    roughness: sceneConfig.reveal.materials.frontRoughness,
-    metalness: sceneConfig.reveal.materials.frontMetalness,
-    clearcoat: sceneConfig.reveal.materials.frontClearcoat,
-    clearcoatRoughness: sceneConfig.reveal.materials.frontClearcoatRoughness,
-  })
-  const sideMaterial = new THREE.MeshStandardMaterial({
-    color: themeConfig.scene.revealSide,
-    roughness: sceneConfig.reveal.materials.sideRoughness,
-    metalness: sceneConfig.reveal.materials.sideMetalness,
-  })
   let maximumWidth = 0
 
   content.add(textLines)
@@ -134,7 +200,7 @@ async function createTextContent(
       -(bounds.min.y + bounds.max.y) / 2,
       sceneConfig.reveal.textDepthOffset
     )
-    const mesh = new THREE.Mesh(geometry, [frontMaterial, sideMaterial])
+    const mesh = new THREE.Mesh(geometry, [materials.front, materials.side])
     mesh.position.y =
       sceneConfig.reveal.linePositionsY[lineIndex] +
       (1 - height) * sceneConfig.reveal.lineHeightAdjustment
@@ -142,8 +208,21 @@ async function createTextContent(
   })
 
   textLines.scale.setScalar(
-    maximumWidth > 0 ? sceneConfig.reveal.maximumWidth / maximumWidth : 1
+    maximumWidth > 0
+      ? (contentConfig.revealText.maximumWidth ?? sceneConfig.reveal.maximumWidth) /
+          maximumWidth
+      : 1
   )
+  return content
+}
+
+function getContent(contentByLocale: ReadonlyMap<Locale, THREE.Group>, locale: Locale) {
+  const content = contentByLocale.get(locale)
+
+  if (!content) {
+    throw new Error(`Missing 3D content for locale: ${locale}`)
+  }
+
   return content
 }
 

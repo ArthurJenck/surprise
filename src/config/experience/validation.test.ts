@@ -28,15 +28,21 @@ describe('experience configuration validation', () => {
       ...experienceConfig,
       content: {
         ...experienceConfig.content,
-        overlay: {
-          ...experienceConfig.content.overlay,
-          availability: '',
+        locales: {
+          ...experienceConfig.content.locales,
+          fr: {
+            ...experienceConfig.content.locales.fr,
+            overlay: {
+              ...experienceConfig.content.locales.fr.overlay,
+              availability: '',
+            },
+          },
         },
       },
     }
 
     expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
-      'content.overlay.availability must not be empty.'
+      'content.locales.fr.overlay.availability must not be empty.'
     )
   })
 
@@ -45,18 +51,24 @@ describe('experience configuration validation', () => {
       ...experienceConfig,
       content: {
         ...experienceConfig.content,
-        overlay: {
-          ...experienceConfig.content.overlay,
-          contact: {
-            ...experienceConfig.content.overlay.contact,
-            label: '',
+        locales: {
+          ...experienceConfig.content.locales,
+          fr: {
+            ...experienceConfig.content.locales.fr,
+            overlay: {
+              ...experienceConfig.content.locales.fr.overlay,
+              contact: {
+                ...experienceConfig.content.locales.fr.overlay.contact,
+                label: '',
+              },
+            },
           },
         },
       },
     }
 
     expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
-      'content.overlay.contact.label must not be empty.'
+      'content.locales.fr.overlay.contact.label must not be empty.'
     )
   })
 
@@ -65,18 +77,24 @@ describe('experience configuration validation', () => {
       ...experienceConfig,
       content: {
         ...experienceConfig.content,
-        overlay: {
-          ...experienceConfig.content.overlay,
-          contact: {
-            ...experienceConfig.content.overlay.contact,
-            email: '',
+        locales: {
+          ...experienceConfig.content.locales,
+          fr: {
+            ...experienceConfig.content.locales.fr,
+            overlay: {
+              ...experienceConfig.content.locales.fr.overlay,
+              contact: {
+                ...experienceConfig.content.locales.fr.overlay.contact,
+                email: '',
+              },
+            },
           },
         },
       },
     }
 
     expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
-      'content.overlay.contact.email must not be empty.'
+      'content.locales.fr.overlay.contact.email must not be empty.'
     )
   })
 
@@ -85,14 +103,43 @@ describe('experience configuration validation', () => {
       ...experienceConfig,
       content: {
         ...experienceConfig.content,
-        revealText: {
-          lines: ['Une seule ligne'],
+        locales: {
+          ...experienceConfig.content.locales,
+          en: {
+            ...experienceConfig.content.locales.en,
+            revealText: {
+              lines: ['One line only'],
+            },
+          },
         },
       },
     }
 
     expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
-      'scene.reveal.linePositionsY must match content.revealText.lines.'
+      'scene.reveal.linePositionsY must match content.locales.en.revealText.lines.'
+    )
+  })
+
+  it('rejects a non-positive localized reveal width', () => {
+    const invalidConfig: ExperienceConfig = {
+      ...experienceConfig,
+      content: {
+        ...experienceConfig.content,
+        locales: {
+          ...experienceConfig.content.locales,
+          en: {
+            ...experienceConfig.content.locales.en,
+            revealText: {
+              ...experienceConfig.content.locales.en.revealText,
+              maximumWidth: 0,
+            },
+          },
+        },
+      },
+    }
+
+    expect(() => assertValidExperienceConfig(invalidConfig)).toThrow(
+      'content.locales.en.revealText.maximumWidth must be a finite positive number.'
     )
   })
 

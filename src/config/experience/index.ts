@@ -21,6 +21,9 @@ export const experienceConfig = {
 
 export type {
   ExperienceConfig,
+  LanguageOption,
+  Locale,
+  LocalizedContent,
   ProfessionalLink,
   ResponsiveProfile,
 } from './types'

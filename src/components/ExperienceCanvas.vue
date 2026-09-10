@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { ExperienceConfig } from '../config/experience'
+import type {
+    ExperienceConfig,
+    Locale,
+    LocalizedContent,
+} from '../config/experience'
 import type { ExperienceController } from '../experience/createExperience'
 import type {
     ExperienceState,
@@ -9,6 +13,8 @@ import type {
 
 const props = defineProps<{
     config: ExperienceConfig
+    locale: Locale
+    content: LocalizedContent
 }>()
 
 const emit = defineEmits<{
@@ -20,6 +26,12 @@ const emit = defineEmits<{
 const canvas = ref<HTMLCanvasElement | null>(null)
 let controller: ExperienceController | undefined
 let cancelled = false
+
+function setLocale(locale: Locale) {
+    controller?.setLocale(locale)
+}
+
+defineExpose({ setLocale })
 
 onMounted(async () => {
     const element = canvas.value
@@ -45,8 +57,11 @@ onMounted(async () => {
                 onStateChange: (state) => emit('state-change', state),
                 onFailure: () => emit('state-change', 'failed'),
             },
-            props.config
+            props.config,
+            props.locale
         )
+
+        controller.setLocale(props.locale)
 
         if (cancelled) {
             controller.destroy()
@@ -70,6 +85,6 @@ onBeforeUnmount(() => {
         class="experience-canvas"
         tabindex="0"
         role="button"
-        aria-label="Scène 3D de cadeau, appuyez pour l’ouvrir."
+        :aria-label="content.accessibility.closedCanvasLabel"
     />
 </template>

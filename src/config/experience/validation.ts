@@ -1,4 +1,4 @@
-import type { ExperienceConfig } from './types'
+import { LOCALES, type ExperienceConfig } from './types'
 
 export class ExperienceConfigError extends Error {
   constructor(message: string) {
@@ -10,22 +10,7 @@ export class ExperienceConfigError extends Error {
 export function assertValidExperienceConfig(config: ExperienceConfig) {
   assertNonEmpty(config.scene.gift.modelUrl, 'scene.gift.modelUrl')
   assertNonEmpty(config.scene.reveal.fontUrl, 'scene.reveal.fontUrl')
-  assertNonEmpty(config.content.overlay.signature, 'content.overlay.signature')
-  assertNonEmpty(config.content.overlay.availability, 'content.overlay.availability')
-  assertNonEmpty(config.content.overlay.contact.label, 'content.overlay.contact.label')
-  assertNonEmpty(config.content.overlay.contact.email, 'content.overlay.contact.email')
-  config.content.overlay.links.forEach((link, index) => {
-    assertNonEmpty(link.label, `content.overlay.links[${index}].label`)
-    assertNonEmpty(link.href, `content.overlay.links[${index}].href`)
-  })
-
-  if (config.content.revealText.lines.length === 0) {
-    throw new ExperienceConfigError('content.revealText.lines must not be empty.')
-  }
-
-  if (config.scene.reveal.linePositionsY.length !== config.content.revealText.lines.length) {
-    throw new ExperienceConfigError('scene.reveal.linePositionsY must match content.revealText.lines.')
-  }
+  assertLocalizedContent(config)
 
   if (config.theme.scene.confetti.length === 0) {
     throw new ExperienceConfigError('theme.scene.confetti must not be empty.')
@@ -172,6 +157,70 @@ export function assertValidExperienceConfig(config: ExperienceConfig) {
     assertPositive(profile.finalGiftScaleMultiplier, `responsive.${name}.finalGiftScaleMultiplier`)
     assertPositive(profile.textScale, `responsive.${name}.textScale`)
   }
+}
+
+function assertLocalizedContent(config: ExperienceConfig) {
+  assertNonEmpty(config.content.languageSelection.ariaLabel, 'content.languageSelection.ariaLabel')
+
+  const configuredLocales = new Set(
+    config.content.languageSelection.options.map((option) => option.locale)
+  )
+
+  if (
+    configuredLocales.size !== LOCALES.length ||
+    LOCALES.some((locale) => !configuredLocales.has(locale))
+  ) {
+    throw new ExperienceConfigError(
+      'content.languageSelection.options must contain each supported locale exactly once.'
+    )
+  }
+
+  config.content.languageSelection.options.forEach((option, index) => {
+    assertNonEmpty(option.label, `content.languageSelection.options[${index}].label`)
+    assertNonEmpty(option.compactLabel, `content.languageSelection.options[${index}].compactLabel`)
+  })
+
+  LOCALES.forEach((locale) => {
+    const content = config.content.locales[locale]
+    const path = `content.locales.${locale}`
+    assertNonEmpty(content.overlay.signature, `${path}.overlay.signature`)
+    assertNonEmpty(content.overlay.availability, `${path}.overlay.availability`)
+    assertNonEmpty(content.overlay.contact.label, `${path}.overlay.contact.label`)
+    assertNonEmpty(content.overlay.contact.email, `${path}.overlay.contact.email`)
+    assertNonEmpty(content.overlay.professionalLinksLabel, `${path}.overlay.professionalLinksLabel`)
+    content.overlay.links.forEach((link, index) => {
+      assertNonEmpty(link.label, `${path}.overlay.links[${index}].label`)
+      assertNonEmpty(link.href, `${path}.overlay.links[${index}].href`)
+    })
+
+    if (content.revealText.lines.length === 0) {
+      throw new ExperienceConfigError(`${path}.revealText.lines must not be empty.`)
+    }
+
+    if (config.scene.reveal.linePositionsY.length !== content.revealText.lines.length) {
+      throw new ExperienceConfigError(
+        `scene.reveal.linePositionsY must match ${path}.revealText.lines.`
+      )
+    }
+
+    if (content.revealText.maximumWidth !== undefined) {
+      assertPositive(content.revealText.maximumWidth, `${path}.revealText.maximumWidth`)
+    }
+
+    assertNonEmpty(content.loading.message, `${path}.loading.message`)
+    assertNonEmpty(content.loading.failureMessage, `${path}.loading.failureMessage`)
+    assertNonEmpty(content.loading.failureDetail, `${path}.loading.failureDetail`)
+    assertNonEmpty(content.loading.retryLabel, `${path}.loading.retryLabel`)
+    assertNonEmpty(content.loading.reloadLabel, `${path}.loading.reloadLabel`)
+    assertNonEmpty(content.accessibility.closedCanvasLabel, `${path}.accessibility.closedCanvasLabel`)
+    assertNonEmpty(content.accessibility.openedCanvasLabel, `${path}.accessibility.openedCanvasLabel`)
+    assertNonEmpty(
+      content.accessibility.languageSwitcherLabel,
+      `${path}.accessibility.languageSwitcherLabel`
+    )
+    assertNonEmpty(content.document.title, `${path}.document.title`)
+    assertNonEmpty(content.document.description, `${path}.document.description`)
+  })
 }
 
 function assertNonEmpty(value: string, path: string) {

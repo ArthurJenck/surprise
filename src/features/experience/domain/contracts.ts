@@ -1,4 +1,4 @@
-import type { ExperienceConfig } from '../../../config/experience'
+import type { ExperienceConfig, Locale } from '../../../config/experience'
 
 export type ExperienceState = 'idle' | 'recentering' | 'opening' | 'revealed' | 'failed'
 
@@ -16,6 +16,7 @@ export interface ExperienceCallbacks {
 
 export interface ExperienceController {
   destroy: () => void
+  setLocale: (locale: Locale) => void
 }
 
 export interface FrameContext {
@@ -44,6 +45,7 @@ export interface ExperienceFactory {
   create: (
     canvas: HTMLCanvasElement,
     config: ExperienceConfig,
-    callbacks: ExperienceCallbacks
+    callbacks: ExperienceCallbacks,
+    locale: Locale
   ) => Promise<ExperienceController>
 }

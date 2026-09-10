@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { LocalizedContent } from '../config/experience'
 import { resolveModelLoadPercent } from '../features/experience/domain/loading'
 import type { ModelLoadProgress } from '../features/experience/domain/contracts'
 
 const props = defineProps<{
+    content: LocalizedContent
     failed: boolean
     progress?: ModelLoadProgress
     slow: boolean
@@ -13,10 +15,10 @@ const percent = computed(() => resolveModelLoadPercent(props.progress))
 
 const message = computed(() => {
     if (props.failed) {
-        return 'Échec du chargement.'
+        return props.content.loading.failureMessage
     }
 
-    return 'Chargement...'
+    return props.content.loading.message
 })
 
 function reloadExperience() {
@@ -36,14 +38,14 @@ function reloadExperience() {
 
             <template v-if="failed">
                 <p class="loading-overlay__detail">
-                    Vérifiez votre connexion, puis relancez la page.
+                    {{ content.loading.failureDetail }}
                 </p>
                 <button
                     class="loading-overlay__retry"
                     type="button"
                     @click="reloadExperience"
                 >
-                    Réessayer
+                    {{ content.loading.retryLabel }}
                 </button>
             </template>
 
@@ -82,7 +84,7 @@ function reloadExperience() {
                     type="button"
                     @click="reloadExperience"
                 >
-                    Recharger
+                    {{ content.loading.reloadLabel }}
                 </button>
             </template>
         </div>
